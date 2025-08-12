@@ -1,0 +1,14 @@
+[project]
+name = "jd-generator"
+version = "0.1.0"
+description = "Job Description Generator MCP Server"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp[cli]>=1.12.3",
+    "supabase>=2.18.0",
+    "python-dotenv>=1.1.1",
+    "requests>=2.32.0",
+    "fastapi>=0.115.0",
+    "uvicorn>=0.35.0",
+] 

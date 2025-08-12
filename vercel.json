@@ -1,0 +1,14 @@
+{
+    "builds": [
+        {
+            "src": "mcp_server/api.py",
+            "use": "@vercel/python"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/(.*)",
+            "dest": "mcp_server/api.py"
+        }
+    ]
+}

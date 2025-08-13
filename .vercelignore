@@ -3,8 +3,8 @@ weather/
 interactive_jd_demo.py
 *.md
 .git/
-.venv/
-__pycache__/
+**/.venv/
+**/__pycache__/
 *.pyc
 .env*
 !.env.example

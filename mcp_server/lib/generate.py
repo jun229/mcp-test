@@ -1,3 +1,4 @@
+# This is a placeholder for the actual JD generation function.
 def generate_jd(title, department, requirements, similar):
     return {
         "title": title,

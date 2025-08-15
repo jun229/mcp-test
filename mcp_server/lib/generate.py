@@ -69,8 +69,8 @@ def extract_requirements_from_chunks(similar_chunks: List[dict], user_requiremen
             for line in lines:
                 line = line.strip()
                 if line and len(line) > 10 and len(line) < 150:
-                    # Remove any leading bullets or numbers
-                    cleaned = re.sub(r'^[-•*\d+\.\s]+', '', line).strip()
+                    # Remove any leading bullets but preserve numbers like "2+"
+                    cleaned = re.sub(r'^[-•*\s]+', '', line).strip()
                     if cleaned:
                         extracted_reqs.append(cleaned)
     
@@ -168,11 +168,33 @@ def generate_jd(title: str, department: str, requirements: List[str], similar_ch
         Structured job description dictionary
     """
     
+    print(f"\n🔍 RAG EXTRACTION DEBUG for {title} - {department}")
+    print(f"📊 Using {len(similar_chunks)} similar job chunks")
+    
     # Extract content from similar jobs using RAG
+    print("\n📋 Extracting responsibilities...")
     rag_responsibilities = extract_responsibilities_from_chunks(similar_chunks)
+    print(f"   Found {len(rag_responsibilities)} responsibilities:")
+    for i, resp in enumerate(rag_responsibilities, 1):
+        print(f"   {i}. {resp}")
+    
+    print("\n📝 Extracting requirements...")
     rag_requirements = extract_requirements_from_chunks(similar_chunks, requirements)
+    print(f"   Found {len(rag_requirements)} total requirements:")
+    for i, req in enumerate(rag_requirements, 1):
+        print(f"   {i}. {req}")
+    
+    print("\n✨ Extracting nice-to-haves...")
     rag_nice_to_haves = extract_nice_to_haves_from_chunks(similar_chunks)
+    print(f"   Found {len(rag_nice_to_haves)} nice-to-haves:")
+    for i, nice in enumerate(rag_nice_to_haves, 1):
+        print(f"   {i}. {nice}")
+    
+    print("\n📖 Extracting intro context...")
     intro = extract_intro_context(similar_chunks, title, department)
+    print(f"   Intro: {intro}")
+    
+    print("\n✅ RAG extraction complete!\n")
     
     return {
         "title": title,

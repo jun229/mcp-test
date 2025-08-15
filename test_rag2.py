@@ -72,7 +72,7 @@ def test_faq_search():
 
     try:
         query_embedding = embed(query)
-        similar_chunks = search_similar_faq_docs(query_embedding, match_count=3)
+        similar_chunks = search_similar_faq_docs(query_embedding, match_count=5)
 
         # Show what we found
         print('\n📋 FAQ RESULTS:')

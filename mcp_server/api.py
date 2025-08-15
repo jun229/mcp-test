@@ -11,7 +11,7 @@ load_dotenv()
 # Import lib modules
 from lib.supabase import supabase, search_similar_chunks
 from lib.embeddings import embed
-from lib.generate import generate_jd
+from lib.generate import generate_jd, JobDescriptionGenerator
 
 app = FastAPI(title="JD Generator API", version="1.0.0")
 
@@ -34,33 +34,72 @@ class SearchRequest(BaseModel):
     department: str
     requirements: List[str]
 
+class IngestRequest(BaseModel):
+    content: str
+
 class JsonRpcRequest(BaseModel):
     jsonrpc: str = "2.0"
     id: Any
     method: str
     params: Optional[Dict[str, Any]] = None
 
-# Tool functions (adapted from main.py)
+# Initialize the job description generator
+jd_generator = JobDescriptionGenerator()
+
+# Tool functions (enhanced with new generator)
 async def search_and_generate_tool(title: str, department: str, requirements: List[str]) -> str:
     """Search for similar job descriptions and generate a new one"""
     
-    # Create search query from inputs
-    search_text = f"{title} {department} {' '.join(requirements)}"
-    
-    # Get embedding for search query
-    query_embedding = embed(search_text)
-    
-    # Search for similar chunks
-    similar_chunks = search_similar_chunks(query_embedding, match_count=5)
-    
-    # Generate job description using similar content
-    result = generate_jd(title, department, requirements, similar_chunks)
-    
-    return json.dumps({
-        "generated_jd": result,
-        "similar_chunks": similar_chunks,
-        "search_query": search_text
-    }, indent=2)
+    try:
+        # Use the enhanced generator for better results
+        result = jd_generator.generate_local(title, department, requirements)
+        
+        return json.dumps(result, indent=2)
+    except Exception as e:
+        # Fallback to legacy method if new one fails
+        print(f"Enhanced generation failed, falling back to legacy: {e}")
+        
+        # Create search query from inputs
+        search_text = f"{title} {department} {' '.join(requirements)}"
+        
+        # Get embedding for search query
+        query_embedding = embed(search_text)
+        
+        # Search for similar chunks
+        similar_chunks = search_similar_chunks(query_embedding, match_count=5)
+        
+        # Generate job description using similar content (legacy)
+        legacy_result = generate_jd(title, department, requirements, similar_chunks)
+        
+        return json.dumps({
+            "generated_jd": legacy_result,
+            "similar_chunks": similar_chunks,
+            "search_query": search_text
+        }, indent=2)
+
+async def ingest_tool(content: str) -> str:
+    """Add job description content to the database"""
+    try:
+        # For now, we'll use a simple approach to add content to Supabase
+        # In a real implementation, you might want to chunk the content
+        # and generate embeddings for better search
+        
+        # Generate embedding for the content
+        embedding = embed(content)
+        
+        # Insert into the chunks table (assuming this table structure exists)
+        result = supabase.table('chunks').insert({
+            'content': content,
+            'embedding': embedding
+        }).execute()
+        
+        if result.data:
+            return "Successfully added job description to database"
+        else:
+            return "Failed to add job description to database"
+            
+    except Exception as e:
+        return f"Error adding to database: {str(e)}"
 
 # MCP Protocol Handler
 @app.post("/mcp")
@@ -114,6 +153,17 @@ async def mcp_handler(request: Request):
                                 },
                                 "required": ["title", "department", "requirements"]
                             }
+                        },
+                        {
+                            "name": "ingest",
+                            "description": "Add job description content to the database for future reference",
+                            "inputSchema": {
+                                "type": "object",
+                                "properties": {
+                                    "content": {"type": "string", "description": "Job description content to add to the database"}
+                                },
+                                "required": ["content"]
+                            }
                         }
                     ]
                 }
@@ -128,6 +178,23 @@ async def mcp_handler(request: Request):
                     title=arguments.get("title"),
                     department=arguments.get("department"),
                     requirements=arguments.get("requirements", [])
+                )
+                
+                return JSONResponse(content={
+                    "jsonrpc": "2.0",
+                    "id": jsonrpc_req.id,
+                    "result": {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": result
+                            }
+                        ]
+                    }
+                })
+            elif tool_name == "ingest":
+                result = await ingest_tool(
+                    content=arguments.get("content", "")
                 )
                 
                 return JSONResponse(content={
@@ -178,6 +245,17 @@ async def api_search_and_generate(
             department=request.department,
             requirements=request.requirements
         )
+        return {"result": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/ingest")
+async def api_ingest(
+    request: IngestRequest,
+    _: str = Depends(verify_api_key)
+):
+    try:
+        result = await ingest_tool(content=request.content)
         return {"result": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

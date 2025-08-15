@@ -101,8 +101,21 @@ async def ingest_tool(content: str) -> str:
 
 # MCP Protocol Handler
 @app.post("/mcp")
+@app.options("/mcp")
 async def mcp_handler(request: Request):
     """Handle MCP protocol requests from Claude Desktop"""
+    
+    # Handle OPTIONS requests for CORS
+    if request.method == "OPTIONS":
+        return JSONResponse(
+            content={},
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "POST, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type, x-api-key",
+            }
+        )
+    
     try:
         # Get request body and headers
         body = await request.json()

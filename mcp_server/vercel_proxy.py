@@ -9,7 +9,11 @@ from mcp.server.fastmcp import FastMCP
 from typing import List
 
 # Vercel configuration - update this URL for your deployment
-VERCEL_API_URL = "https://mcp-test-3p5bwgfx7-brians-projects-76cf6a1c.vercel.app/api/search-and-generate"
+# mcp-test-3p5bwgfx7-brians-projects-76cf6a1c.vercel.app/api/search-and-generate
+# mcp-test-trvhj3ibx-brians-projects-76cf6a1c.vercel.app
+# https://mcp-test-i865lyb1s-brians-projects-76cf6a1c.vercel.app
+
+VERCEL_API_URL = "https://mcp-test-i865lyb1s-brians-projects-76cf6a1c.vercel.app"
 API_KEY = "123123"
 
 mcp = FastMCP("jd-generator-vercel")
@@ -19,9 +23,9 @@ async def search_and_generate(title: str, department: str, requirements: List[st
     """Search for similar job descriptions and generate a new one using Vercel backend"""
     
     try:
-        # Forward request to Vercel API
+        # Forward request to Vercel REST API endpoint
         response = requests.post(
-            VERCEL_API_URL,
+            f"{VERCEL_API_URL}/api/search-and-generate",
             headers={
                 "Content-Type": "application/json",
                 "x-api-key": API_KEY
@@ -42,6 +46,8 @@ async def search_and_generate(title: str, department: str, requirements: List[st
             
     except Exception as e:
         return f"Failed to connect to Vercel API: {str(e)}"
+
+
 
 if __name__ == "__main__":
     mcp.run(transport='stdio') 

@@ -9,26 +9,20 @@ def search_similar_job_descriptions(query_embedding, match_count=5):
     """Search for similar job descriptions using vector similarity"""
     try:
         # Try to use vector similarity search on job_descriptions table
-        result = supabase.rpc('match_job_descriptions', {
+        result = supabase.rpc('match_job', {
             'query_embedding': query_embedding,
             'match_count': match_count
         }).execute()
         return result.data
     except Exception as e:
         print(f"{e}")
-        print("🔄 Falling back to direct table query from job_descriptions...")
-        
-        # Fallback: Get job descriptions from the correct table
-        result = supabase.table('job_descriptions').select('*').limit(match_count).execute()
-        print(f"✅ Retrieved {len(result.data)} job descriptions from job_descriptions table")
-        return result.data
 
 
 def search_similar_faq_docs(query_embedding, match_count=5):
     """Search for similar FAQ documents using vector similarity"""
     try:
         # Try to use vector similarity search on faq_docs table
-        result = supabase.rpc('match_faq_docs', {
+        result = supabase.rpc('match_chunks', {
             'query_embedding': query_embedding,
             'match_count': match_count
         }).execute()

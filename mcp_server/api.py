@@ -11,7 +11,7 @@ load_dotenv()
 # Import lib modules
 from lib.supabase import supabase, search_similar_chunks
 from lib.embeddings import embed
-from lib.generate import generate_jd, JobDescriptionGenerator
+from lib.generate import generate_jd
 
 app = FastAPI(title="JD Generator API", version="1.0.0")
 
@@ -43,22 +43,13 @@ class JsonRpcRequest(BaseModel):
     method: str
     params: Optional[Dict[str, Any]] = None
 
-# Initialize the job description generator
-jd_generator = JobDescriptionGenerator()
+# Job description generation uses the generate_jd function directly
 
-# Tool functions (enhanced with new generator)
+# Tool functions
 async def search_and_generate_tool(title: str, department: str, requirements: List[str]) -> str:
     """Search for similar job descriptions and generate a new one"""
     
     try:
-        # Use the enhanced generator for better results
-        result = jd_generator.generate_local(title, department, requirements)
-        
-        return json.dumps(result, indent=2)
-    except Exception as e:
-        # Fallback to legacy method if new one fails
-        print(f"Enhanced generation failed, falling back to legacy: {e}")
-        
         # Create search query from inputs
         search_text = f"{title} {department} {' '.join(requirements)}"
         
@@ -68,13 +59,20 @@ async def search_and_generate_tool(title: str, department: str, requirements: Li
         # Search for similar chunks
         similar_chunks = search_similar_chunks(query_embedding, match_count=5)
         
-        # Generate job description using similar content (legacy)
-        legacy_result = generate_jd(title, department, requirements, similar_chunks)
+        # Generate job description using similar content
+        result = generate_jd(title, department, requirements, similar_chunks)
         
         return json.dumps({
-            "generated_jd": legacy_result,
+            "generated_jd": result,
             "similar_chunks": similar_chunks,
             "search_query": search_text
+        }, indent=2)
+    except Exception as e:
+        return json.dumps({
+            "error": f"Failed to generate job description: {str(e)}",
+            "title": title,
+            "department": department,
+            "requirements": requirements
         }, indent=2)
 
 async def ingest_tool(content: str) -> str:

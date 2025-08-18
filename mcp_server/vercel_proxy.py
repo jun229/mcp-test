@@ -8,11 +8,6 @@ import requests
 from mcp.server.fastmcp import FastMCP
 from typing import List
 
-# Vercel configuration - update this URL for your deployment
-# mcp-test-3p5bwgfx7-brians-projects-76cf6a1c.vercel.app/api/search-and-generate
-# mcp-test-trvhj3ibx-brians-projects-76cf6a1c.vercel.app
-# https://mcp-test-i865lyb1s-brians-projects-76cf6a1c.vercel.app
-# mcp-test-fjdopimrg-brians-projects-76cf6a1c.vercel.app
 
 VERCEL_API_URL = "https://mcp-test-i865lyb1s-brians-projects-76cf6a1c.vercel.app"
 API_KEY = "123123"

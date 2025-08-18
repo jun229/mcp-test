@@ -1,6 +1,8 @@
 mcp-client/
 weather/
 interactive_jd_demo.py*
+mcp_server/ARCHITECTURE.md
+mcp_server/ARCHITECTURE.md*
 *.md
 .git/
 **/.venv/

@@ -16,7 +16,7 @@ def extract_responsibilities_from_chunks(similar_chunks: List[dict]) -> List[str
     
     responsibilities = []
     
-    for chunk in similar_chunks[:5]:  # Use top 5 most similar
+    for chunk in similar_chunks[:3]:  # Use top 3 most similar
         content = chunk.get('content', '')
         
         # Find the Responsibilities section

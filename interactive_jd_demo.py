@@ -15,10 +15,6 @@ import textwrap
 import requests
 from typing import Dict, List, Optional
 
-# Configuration
-VERCEL_API_URL = "https://mcp-test-qaeo64sjx-brians-projects-76cf6a1c.vercel.app"
-API_KEY = "123123"  # Your API key
-
 def safe_exit(code=0):
     """Exit safely."""
     sys.exit(code)

@@ -5,3 +5,9 @@ cleaned_job_dataset.csv
 test.csv
 mcp_server/leveling_guides
 db_schema.md
+mcp-client/
+weather/
+interactive_jd_demo.py
+test_rag.py
+test_rag2.py
+vercel.json

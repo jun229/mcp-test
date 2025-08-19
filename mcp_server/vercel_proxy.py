@@ -45,7 +45,7 @@ def load_leveling_context(target_level: str = "uni3") -> str:
         other_files.insert(0, unicode_file)  # Add at beginning of other_files
     
     # Load files in priority order: exact match → similar level → general (including UNICode)
-    files_to_load = (exact_files + similar_files + other_files)[:3]  # Limit to 3 most relevant files
+    files_to_load = (exact_files + similar_files + other_files)[:5]  # Limit to 5 most relevant files
     
     for file_path in files_to_load:
         try:

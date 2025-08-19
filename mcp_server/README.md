@@ -1,52 +1,123 @@
-# MCP Server
+# Job Description Generator - MCP Server
 
-This is a minimal MCP server in Python using FastAPI.
+A lightweight MCP (Model Context Protocol) server that helps generate and level job descriptions. This tool can search for similar job postings and generate new ones, plus rewrite job descriptions to match specific experience levels.
 
-## Local Development
+## 🚀 Quick Start (Recommended)
 
-1.  **Install dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
+### Option 1: Direct Claude Desktop Integration
 
-2.  **Set up environment variables:**
-    Create a `.env` file in the `mcp_server` directory and add the following:
-    ```ini
-    SUPABASE_URL=...
-    SUPABASE_SERVICE_ROLE=...
-    ANTHROPIC_API_KEY=...
-    MCP_API_KEY=DEV_LOCAL_KEY
-    ```
+Add this to your Claude Desktop configuration (`~/Library/Application Support/Claude/claude_desktop_config.json`):
 
-3.  **Run the server:**
-    ```bash
-    uvicorn main:app --reload --port 8787
-    ```
-
-## Vercel Deployment
-
-1.  **Install Vercel CLI:**
-    ```bash
-    npm install -g vercel
-    ```
-
-2.  **Deploy:**
-    ```bash
-    vercel
-    ```
-
-## Example `curl` Commands
-
-### Search and Generate
-```bash
-curl -X POST http://localhost:8787/mcp/search_and_generate \
-  -H "Content-Type: application/json" -H "x-api-key: DEV_LOCAL_KEY" \
-  -d '{"title":"Senior SWE","department":"Engineering","requirements":["Python","Postgres"]}'
+```json
+{
+  "mcpServers": {
+    "JD_Tools": {
+      "command": "/Users/YOUR_USERNAME/.local/bin/uv",
+      "args": [
+        "run",
+        "--with",
+        "mcp[cli]",
+        "--with",
+        "requests",
+        "mcp",
+        "run",
+        "/path/to/your/mcp-test/mcp_server/vercel_proxy.py"
+      ]
+    }
+  }
+}
 ```
 
-### Search Stream
+**Replace:**
+- `YOUR_USERNAME` with your actual username
+- `/path/to/your/mcp-test/` with the actual path to this repository
+
+### Option 2: Local Development Setup
+
+If you want to run and modify the server locally:
+
+1. **Install uv (if not already installed):**
+   ```bash
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
+
+2. **Clone and navigate to the project:**
+   ```bash
+   git clone <your-repo-url>
+   cd mcp-test/mcp_server
+   ```
+
+3. **Create and activate environment:**
+   ```bash
+   uv venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   ```
+
+4. **Install dependencies:**
+   ```bash
+   uv pip install -r proxy_requirements.txt
+   ```
+
+5. **Run the proxy server:**
+   ```bash
+   python vercel_proxy.py
+   ```
+
+## 🛠️ What This Tool Does
+
+### Available Functions:
+
+1. **`search_and_generate`** - Creates a new job description by searching for similar roles
+2. **`leveling_guide`** - Rewrites job descriptions to match specific experience levels (uni1-7, m3-7)
+
+### Example Usage in Claude:
+
+Once connected, you can ask Claude:
+- *"Generate a job description for a Senior Software Engineer in the Data team requiring Python and PostgreSQL"*
+- *"Rewrite this job description to match a uni5 level"*
+- *"Create a job posting for a Frontend Developer with React experience"*
+
+## 📁 File Structure
+
+```
+mcp_server/
+├── vercel_proxy.py          # Main proxy server (lightweight)
+├── proxy_requirements.txt   # Minimal dependencies 
+├── main.py                 # Full FastAPI server (for advanced use)
+├── requirements.txt        # Full dependencies
+└── lib/                    # Additional modules
+```
+
+## 🔧 Troubleshooting
+
+### Common Issues:
+
+1. **"uv not found"**
+   - Install uv: `curl -LsSf https://astral.sh/uv/install.sh | sh`
+   - Restart your terminal
+
+2. **"Permission denied"**
+   - Make sure the path in your Claude config is correct
+   - Check that `vercel_proxy.py` is executable: `chmod +x vercel_proxy.py`
+
+3. **"Module not found"**
+   - Run: `uv pip install -r proxy_requirements.txt`
+
+### Testing the Connection:
+
+You can test if the server is working by running:
 ```bash
-curl -N -X POST http://localhost:8787/mcp/search_stream \
-  -H "Content-Type: application/json" -H "x-api-key: DEV_LOCAL_KEY" \
-  -d '{"title":"Senior SWE","department":"Engineering","requirements":["Python","Postgres"]}'
-``` 
+python vercel_proxy.py
+```
+
+The server will start and wait for MCP protocol messages.
+
+## 📋 Dependencies
+
+Minimal setup only requires:
+- `mcp[cli]` - MCP protocol support
+- `requests>=2.32.0` - HTTP requests
+
+## 🌐 Architecture
+
+This proxy forwards requests to a Vercel-hosted API, making it lightweight and easy to run on multiple computers without complex setup or database connections. 

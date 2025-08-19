@@ -39,8 +39,13 @@ def load_leveling_context(target_level: str = "uni3") -> str:
     # Finally, general files
     other_files = [f for f in md_files if f not in exact_files and f not in similar_files]
     
-    # Load files in priority order: exact match → similar level → general
-    files_to_load = (exact_files + similar_files + other_files)[:3]  # Limit to 8 most relevant files
+    # Always include UNICode if it exists
+    unicode_file = os.path.join(leveling_dir, "UNICode.md")
+    if os.path.exists(unicode_file) and unicode_file not in (exact_files + similar_files + other_files):
+        other_files.insert(0, unicode_file)  # Add at beginning of other_files
+    
+    # Load files in priority order: exact match → similar level → general (including UNICode)
+    files_to_load = (exact_files + similar_files + other_files)[:3]  # Limit to 3 most relevant files
     
     for file_path in files_to_load:
         try:
@@ -108,12 +113,20 @@ Your task:
 - Keep the same role essence but adjust complexity, autonomy, and impact level
 - Output in the same markdown format as the input
 
+FORMATTING REQUIREMENTS:
+- Keep each section concise: 3-4 bullet points maximum unless specified otherwise
+- Use direct, impact-focused language that emphasizes ownership and results
+- Always end "Nice to Have" section with "Love for unicorns :)" as the final bullet
+- Write in human terms that anyone can understand - avoid jargon and complexity
+- Emphasize people-first thinking, collaborative problem-solving, and building for the long-term
+- Include language about pushing through ambiguity, iterating fast, and creating clarity from complexity
+
 Focus on:
-- Years of experience requirements
-- Level of autonomy and decision-making
-- Scope of impact and responsibility  
-- Technical depth vs breadth
-- Leadership/mentoring expectations
+- Years of experience requirements aligned with level
+- Level of autonomy and decision-making authority
+- Scope of impact and cross-functional responsibility  
+- Technical depth vs breadth expectations
+- Leadership/mentoring requirements for the level
 """
     
     return prompt

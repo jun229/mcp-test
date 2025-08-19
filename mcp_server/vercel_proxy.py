@@ -10,8 +10,13 @@ import glob
 from mcp.server.fastmcp import FastMCP
 from typing import List
 
-VERCEL_API_URL = "https://mcp-test-6sl3by6lx-brians-projects-76cf6a1c.vercel.app"
-API_KEY = "123123"
+# Load credentials from environment variables
+VERCEL_API_URL = os.environ.get("VERCEL_API_URL", "")
+API_KEY = os.environ.get("API_KEY", "")
+
+# Validate that credentials are provided
+if not VERCEL_API_URL or not API_KEY:
+    raise ValueError("VERCEL_API_URL and API_KEY environment variables must be set")
 
 mcp = FastMCP("jd-generator-vercel")
 

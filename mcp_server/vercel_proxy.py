@@ -10,9 +10,11 @@ import glob
 from mcp.server.fastmcp import FastMCP
 from typing import List
 
-# https://mcp-test-3jdwlicpz-brians-projects-76cf6a1c.vercel.app
+# 3jdwlicpz
+# pc3zm3uvo
+# 6sl3by6lx
 
-VERCEL_API_URL = "https://mcp-test-6sl3by6lx-brians-projects-76cf6a1c.vercel.app"
+VERCEL_API_URL = "https://mcp-test-pc3zm3uvo-brians-projects-76cf6a1c.vercel.app"
 API_KEY = "123123"
 
 mcp = FastMCP("jd-generator-vercel")

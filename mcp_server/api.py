@@ -101,10 +101,14 @@ async def search_and_generate_tool(title: str, department: str, requirements: Li
 
 {context}
 
+## WHEN YOU ARE GENERATING A JOB DESCRIPTION, YOU MUST FOLLOW THESE RULES:
+
 NEW JOB:
 - Title: {title}
 - Department: {department}  
 - Requirements: {', '.join(requirements) if requirements else 'If none provided, infer reasonable ones from the EXAMPLES'}
+
+## DO NOT EXCEED 3-4 BULLET POINTS PER SECTION
 
 Rules:
 - Keep bullets concise (5-20 words), professional tone, no fluff

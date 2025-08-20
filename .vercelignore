@@ -10,3 +10,17 @@ mcp_server/ARCHITECTURE.md*
 *.pyc
 .env*
 !.env.example
+mcp_server/claude_desktop_config.example.json
+mcp_server/config.py
+cleaned_job_dataset.csv
+test.csv
+mcp_server/leveling_guides
+db_schema.md
+mcp-client/
+weather/
+interactive_jd_demo.py
+test_rag.py
+test_rag2.py
+vercel_proxy.py
+mcp_server/TODO.md
+mcp_server/DOCUMENTATION.md

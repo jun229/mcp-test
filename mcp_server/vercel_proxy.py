@@ -10,13 +10,31 @@ import glob
 from mcp.server.fastmcp import FastMCP
 from typing import List
 
-# 3jdwlicpz
-# pc3zm3uvo
-# 6sl3by6lx
-# b41tq9soe
+def get_config():
+    """Get configuration from environment, config file, or fallback to defaults"""
+    # Try environment variables first
+    vercel_url = os.environ.get('VERCEL_API_URL')
+    api_key = os.environ.get('MCP_API_KEY')
+    
+    # Try config file if env vars not found
+    if not vercel_url or not api_key:
+        config_path = os.path.join(os.path.dirname(__file__), 'config.json')
+        if os.path.exists(config_path):
+            try:
+                with open(config_path, 'r') as f:
+                    config = json.load(f)
+                    vercel_url = vercel_url or config.get('VERCEL_API_URL')
+                    api_key = api_key or config.get('API_KEY')
+            except Exception:
+                pass
+    
+    # Fallback to defaults (for development only)
+    vercel_url = vercel_url or "https://mcp-test-b41tq9soe-brians-projects-76cf6a1c.vercel.app"
+    api_key = api_key or "123123"
+    
+    return vercel_url, api_key
 
-VERCEL_API_URL = "https://mcp-test-b41tq9soe-brians-projects-76cf6a1c.vercel.app"
-API_KEY = "123123"
+VERCEL_API_URL, API_KEY = get_config()
 
 mcp = FastMCP("jd-generator-vercel")
 

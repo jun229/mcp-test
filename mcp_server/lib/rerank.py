@@ -42,7 +42,7 @@ class CohereReranker:
         """Rerank a single batch of documents"""
         if not documents:
             return []
-            
+                
         # Prepare documents for Cohere
         doc_texts = []
         for doc in documents:

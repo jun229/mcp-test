@@ -13,8 +13,9 @@ from typing import List
 # 3jdwlicpz
 # pc3zm3uvo
 # 6sl3by6lx
+# b41tq9soe
 
-VERCEL_API_URL = "https://mcp-test-pc3zm3uvo-brians-projects-76cf6a1c.vercel.app"
+VERCEL_API_URL = "https://mcp-test-b41tq9soe-brians-projects-76cf6a1c.vercel.app"
 API_KEY = "123123"
 
 mcp = FastMCP("jd-generator-vercel")
@@ -66,10 +67,20 @@ def load_leveling_context(target_level: str = "uni3") -> str:
     return context
 
 @mcp.tool()
-async def search_and_generate(title: str, department: str, requirements: List[str]) -> str:
-    """Search for similar job descriptions and generate a new one using Vercel backend"""
+async def search_and_generate(title: str, department: str, requirements: List[str] = None) -> str:
+    """Search for similar job descriptions and generate a new one using Vercel backend.
+    
+    Args:
+        title: Job title (required)
+        department: Department name (required) 
+        requirements: Specific requirements (optional - leave empty to infer from examples)
+    """
     
     try:
+        # Handle None requirements (convert to empty list)
+        if requirements is None:
+            requirements = []
+            
         # Forward request to Vercel REST API endpoint
         response = requests.post(
             f"{VERCEL_API_URL}/api/search-and-generate",

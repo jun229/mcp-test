@@ -52,7 +52,7 @@ async def search_with_reranking(
     requirements: List[str],
     query_embedding: List[float],
     final_count: int = 5,
-    initial_retrieval: int = 500,
+    initial_retrieval: int = 10,
     use_reranking: bool = True
 ) -> List[Dict]:
     """
@@ -72,14 +72,14 @@ async def search_with_reranking(
     """
     
     # Step 1: Get initial candidates from vector search
-    print(f"🔍 Retrieving {initial_retrieval} candidates from vector search...")
+    # print(f"🔍 Retrieving {initial_retrieval} candidates from vector search...")
     vector_results = search_similar_job_descriptions(query_embedding, initial_retrieval)
     
     if not vector_results:
-        print("❌ No vector search results found")
+        print("No vector search results found")
         return []
     
-    print(f"📊 Found {len(vector_results)} vector search results")
+    # print(f"📊 Found {len(vector_results)} vector search results")
     
     # Step 2: Apply reranking if enabled
     if use_reranking:
@@ -87,7 +87,7 @@ async def search_with_reranking(
             # Import here to avoid circular imports
             from .rerank import rerank_job_descriptions
             
-            print(f"🔄 Applying Cohere reranking...")
+            # print(f"🔄 Applying Cohere reranking...")
             reranked_results = await rerank_job_descriptions(
                 title=title,
                 department=department,
@@ -96,7 +96,7 @@ async def search_with_reranking(
                 final_count=final_count
             )
             
-            print(f"✅ Reranking complete: {len(reranked_results)} final results")
+           #  print(f"✅ Reranking complete: {len(reranked_results)} final results")
             return reranked_results
             
         except ImportError:
@@ -126,7 +126,7 @@ async def search_large_corpus_with_reranking(
     3. Cost optimization through smart pre-filtering
     """
     
-    print(f"🔍 Large corpus search: targeting {corpus_size} documents")
+    # print(f"🔍 Large corpus search: targeting {corpus_size} documents")
     
     # Adaptive pre-filtering based on corpus size
     if corpus_size >= 15000:

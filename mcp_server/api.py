@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Import lib modules
-from lib.supabase import supabase, search_similar_chunks
+from lib.supabase import supabase, search_similar_chunks, search_with_reranking
 from lib.embeddings import embed
 
 app = FastAPI(title="JD Generator API", version="1.0.0")
@@ -32,9 +32,6 @@ class SearchRequest(BaseModel):
     title: str
     department: str
     requirements: List[str]
-
-class IngestRequest(BaseModel):
-    content: str
 
 class JsonRpcRequest(BaseModel):
     jsonrpc: str = "2.0"
@@ -68,9 +65,22 @@ async def search_and_generate_tool(title: str, department: str, requirements: Li
         # Get embedding for search query
         query_embedding = embed(search_text)
         
-        # Search for similar chunks
-        similar_chunks = search_similar_chunks(query_embedding, match_count=3)
-        
+        # Search with reranking: top-10 initial retrieval, rerank to top-3
+        try: 
+            similar_chunks = await search_with_reranking(
+                title=title,
+                department=department,
+                requirements=requirements,
+                query_embedding=query_embedding,
+                final_count=3,         # Rerank down to top-3
+                initial_retrieval=10,  # Get top-10 from vector search
+                use_reranking=True
+            )
+        except Exception as e:
+            print(f"search_with_reranking failed: {e}")
+            # Fallback to vector search with same target count
+            similar_chunks = search_similar_chunks(query_embedding, match_count=5)
+            
         # Build context and return concise prompt
         context = format_similar_jobs_for_context(similar_chunks)
         
@@ -104,30 +114,6 @@ async def search_and_generate_tool(title: str, department: str, requirements: Li
         
     except Exception as e:
         return f"Error generating job description: {str(e)}"
-
-async def ingest_tool(content: str) -> str:
-    """Add job description content to the database"""
-    try:
-        # For now, we'll use a simple approach to add content to Supabase
-        # In a real implementation, you might want to chunk the content
-        # and generate embeddings for better search
-        
-        # Generate embedding for the content
-        embedding = embed(content)
-        
-        # Insert into the chunks table (assuming this table structure exists)
-        result = supabase.table('chunks').insert({
-            'content': content,
-            'embedding': embedding
-        }).execute()
-        
-        if result.data:
-            return "Successfully added job description to database"
-        else:
-            return "Failed to add job description to database"
-            
-    except Exception as e:
-        return f"Error adding to database: {str(e)}"
 
 # MCP Protocol Handler
 @app.post("/mcp")
@@ -259,17 +245,6 @@ async def api_search_and_generate(
             department=request.department,
             requirements=request.requirements
         )
-        return {"result": result}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/api/ingest")
-async def api_ingest(
-    request: IngestRequest,
-    _: str = Depends(verify_api_key)
-):
-    try:
-        result = await ingest_tool(content=request.content)
         return {"result": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

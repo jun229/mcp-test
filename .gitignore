@@ -1,6 +1,7 @@
 .vercel
 .env
 mcp_server/claude_desktop_config.example.json
+mcp_server/config.py
 cleaned_job_dataset.csv
 test.csv
 mcp_server/leveling_guides

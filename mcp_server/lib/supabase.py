@@ -1,13 +1,24 @@
 from supabase import create_client
 import os
 import asyncio
+import logging
 from typing import List, Dict, Optional
 
-url = os.environ["SUPABASE_URL"]
-key = os.environ["SUPABASE_SERVICE_ROLE"]
-supabase = create_client(url, key)
+# Set up logging
+logger = logging.getLogger(__name__)
 
-def search_similar_job_descriptions(query_embedding, match_count=5):
+try:
+    url = os.environ["SUPABASE_URL"]
+    key = os.environ["SUPABASE_SERVICE_ROLE"]
+except KeyError as e:
+    raise EnvironmentError(f"Missing required environment variable: {e}")
+
+try:
+    supabase = create_client(url, key)
+except Exception as e:
+    raise ConnectionError(f"Failed to initialize Supabase client: {str(e)}")
+
+def search_similar_job_descriptions(query_embedding: List[float], match_count: int = 5) -> List[Dict[str, Any]]:
     """Search for similar job descriptions using vector similarity"""
     try:
         # Try to use vector similarity search on job_descriptions table
@@ -17,8 +28,8 @@ def search_similar_job_descriptions(query_embedding, match_count=5):
         }).execute()
         return result.data if result.data else []
     except Exception as e:
-        print(f"⚠️ Vector similarity search failed: {e}")
-        print("🔄 Falling back to empty results...")
+        logger.warning("Vector similarity search failed: %s", e)
+        logger.info("Falling back to empty results")
         return []
 
 
@@ -32,12 +43,12 @@ def search_similar_faq_docs(query_embedding, match_count=5):
         }).execute()
         return result.data
     except Exception as e:
-        print(f"⚠️ Vector similarity search on faq_docs failed: {e}")
-        print("🔄 Falling back to direct table query from faq_docs...")
+        logger.warning("Vector similarity search on faq_docs failed: %s", e)
+        logger.info("Falling back to direct table query from faq_docs")
         
         # Fallback: Get FAQ docs from the correct table
         result = supabase.table('faq_docs').select('*').limit(match_count).execute()
-        print(f"✅ Retrieved {len(result.data)} FAQ docs from faq_docs table")
+        logger.info("Retrieved %d FAQ docs from faq_docs table", len(result.data))
         return result.data
 
 

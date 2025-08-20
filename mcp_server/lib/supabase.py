@@ -2,7 +2,7 @@ from supabase import create_client
 import os
 import asyncio
 import logging
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 
 # Set up logging
 logger = logging.getLogger(__name__)

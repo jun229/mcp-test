@@ -4,6 +4,8 @@ from pydantic import BaseModel
 from typing import List, Optional, Any, Dict
 import os
 import json
+import time
+import logging
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -13,6 +15,50 @@ from lib.supabase import supabase, search_similar_job_descriptions
 from lib.embeddings import embed
 
 app = FastAPI(title="JD Generator API", version="1.0.0")
+
+# Set up logging for middleware
+logger = logging.getLogger(__name__)
+
+# Request/Response Logging Middleware
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """
+    Middleware that logs every HTTP request and response.
+    
+    How it works:
+    1. FastAPI calls this function for EVERY incoming request
+    2. We capture the start time
+    3. We call the actual endpoint handler with call_next()
+    4. We measure how long it took
+    5. We log the request details and timing
+    6. We return the response to the client
+    """
+    # Step 1: Record when the request started
+    start_time = time.time()
+    
+    # Step 2: Get request details for logging
+    method = request.method
+    path = request.url.path
+    client_ip = request.client.host if request.client else "unknown"
+    
+    # Step 3: Process the actual request (calls your endpoint functions)
+    response = await call_next(request)
+    
+    # Step 4: Calculate how long the request took
+    duration = time.time() - start_time
+    
+    # Step 5: Log the completed request
+    logger.info(
+        "%s %s - %d - %.3fs - %s", 
+        method,           # GET, POST, etc.
+        path,            # /api/search-and-generate, /health, etc.
+        response.status_code,  # 200, 404, 500, etc.
+        duration,        # 1.234 seconds
+        client_ip        # Who made the request
+    )
+    
+    # Step 6: Return the response to the client
+    return response
 
 # Security dependency for REST endpoints
 async def verify_api_key(x_api_key: Optional[str] = Header(None)):

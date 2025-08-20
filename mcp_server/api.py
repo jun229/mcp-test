@@ -302,42 +302,115 @@ async def root():
 @app.get("/health")
 async def health():
     """
-    Health check endpoint that tests system dependencies.
+    Comprehensive health check endpoint that tests all system dependencies.
     
     Returns:
-        200: System is healthy with working database connection
-        503: System is unhealthy with error details
+        200: System is healthy with all components working
+        503: System is unhealthy with detailed error information
     """
+    health_status = {
+        "status": "healthy",
+        "timestamp": time.time(),
+        "version": "1.0.0",
+        "checks": {},
+        "details": {}
+    }
+    
+    has_failures = False
+    
+    # Test 1: Environment Variables
     try:
-        # Test database connectivity
-        result = supabase.table('job_descriptions').select('id').limit(1).execute()
+        required_env_vars = ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE"]
+        missing_vars = []
         
-        return {
-            "status": "healthy",
-            "database": "connected",
-            "timestamp": time.time(),
-            "checks": {
-                "supabase": "✅ Connected",
-                "environment": "✅ Variables loaded"
-            }
-        }
+        for var in required_env_vars:
+            if not os.environ.get(var):
+                missing_vars.append(var)
         
+        if missing_vars:
+            health_status["checks"]["environment"] = f"❌ Missing: {', '.join(missing_vars)}"
+            health_status["details"]["environment_error"] = f"Missing environment variables: {missing_vars}"
+            has_failures = True
+        else:
+            health_status["checks"]["environment"] = "✅ All required variables present"
+            
     except Exception as e:
-        # Return 503 Service Unavailable for unhealthy state
-        logger.error("Health check failed: %s", e)
+        health_status["checks"]["environment"] = f"❌ Error: {str(e)}"
+        has_failures = True
+    
+    # Test 2: Database Connectivity
+    try:
+        start_time = time.time()
+        result = supabase.table('job_descriptions').select('id').limit(1).execute()
+        db_response_time = round((time.time() - start_time) * 1000, 2)  # milliseconds
         
-        return JSONResponse(
-            status_code=503,
-            content={
-                "status": "unhealthy", 
-                "error": str(e),
-                "timestamp": time.time(),
-                "checks": {
-                    "supabase": f"❌ Failed: {str(e)}",
-                    "environment": "⚠️ Partial"
-                }
-            }
-        )
+        if hasattr(result, 'data'):
+            health_status["checks"]["database"] = "✅ Connected"
+            health_status["details"]["db_response_time_ms"] = db_response_time
+            
+            # Check if we got data back (table exists and has records)
+            if result.data is not None:
+                health_status["details"]["db_has_data"] = len(result.data) > 0
+            else:
+                health_status["details"]["db_has_data"] = False
+        else:
+            health_status["checks"]["database"] = "❌ Invalid response structure"
+            has_failures = True
+            
+    except Exception as e:
+        health_status["checks"]["database"] = f"❌ Failed: {str(e)}"
+        health_status["details"]["database_error"] = str(e)
+        has_failures = True
+    
+    # Test 3: OpenAI API Availability (optional - just check if key is configured)
+    try:
+        openai_key = os.environ.get('OPENAI_API_KEY')
+        if openai_key and openai_key.strip():
+            health_status["checks"]["openai_config"] = "✅ API key configured"
+            health_status["details"]["openai_key_length"] = len(openai_key.strip())
+        else:
+            health_status["checks"]["openai_config"] = "⚠️ API key not configured"
+            health_status["details"]["openai_note"] = "OpenAI features will not work"
+    except Exception as e:
+        health_status["checks"]["openai_config"] = f"❌ Error: {str(e)}"
+        
+    # Test 4: File System Access (leveling guides)
+    try:
+        leveling_dir = os.path.join(os.path.dirname(__file__), "leveling_guides")
+        if os.path.exists(leveling_dir) and os.path.isdir(leveling_dir):
+            md_files = len([f for f in os.listdir(leveling_dir) if f.endswith('.md')])
+            health_status["checks"]["file_system"] = "✅ Leveling guides accessible"
+            health_status["details"]["leveling_guide_files"] = md_files
+        else:
+            health_status["checks"]["file_system"] = "⚠️ Leveling guides directory not found"
+            health_status["details"]["file_system_note"] = "Leveling features may not work"
+    except Exception as e:
+        health_status["checks"]["file_system"] = f"❌ Error: {str(e)}"
+        
+    # Test 5: Memory Usage (basic check)
+    try:
+        import psutil
+        process = psutil.Process()
+        memory_mb = round(process.memory_info().rss / 1024 / 1024, 2)
+        health_status["details"]["memory_usage_mb"] = memory_mb
+        
+        if memory_mb > 500:  # Alert if using more than 500MB
+            health_status["checks"]["memory"] = f"⚠️ High usage: {memory_mb}MB"
+        else:
+            health_status["checks"]["memory"] = f"✅ Normal usage: {memory_mb}MB"
+    except ImportError:
+        health_status["checks"]["memory"] = "⚠️ psutil not available"
+    except Exception as e:
+        health_status["checks"]["memory"] = f"❌ Error: {str(e)}"
+    
+    # Final status determination
+    if has_failures:
+        health_status["status"] = "unhealthy"
+        logger.error("Health check failed with issues: %s", health_status["checks"])
+        return JSONResponse(status_code=503, content=health_status)
+    else:
+        logger.info("Health check passed - all systems operational")
+        return health_status
 
 if __name__ == "__main__":
     import uvicorn

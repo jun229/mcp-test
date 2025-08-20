@@ -40,14 +40,35 @@ mcp = FastMCP("jd-generator-vercel")
 
 def load_leveling_context(target_level: str = "uni3") -> str:
     """Load relevant leveling guide context based on target level (uni1-7, m3-7)"""
+    
+    # Input validation
+    if not isinstance(target_level, str):
+        raise TypeError(f"target_level must be a string, got {type(target_level)}")
+    
+    if not target_level or not target_level.strip():
+        raise ValueError("target_level cannot be empty")
+    
+    target_level = target_level.strip().lower()
+    
+    # Validate target level format
+    valid_levels = [f"uni{i}" for i in range(1, 8)] + [f"m{i}" for i in range(3, 8)]
+    if target_level not in valid_levels:
+        raise ValueError(f"Invalid target_level '{target_level}'. Must be one of: {', '.join(valid_levels)}")
+    
     context = ""
     leveling_dir = os.path.join(os.path.dirname(__file__), "leveling_guides")
     
     if not os.path.exists(leveling_dir):
         return "No leveling guides found. Please create a 'leveling_guides' directory with reference text files."
     
+    if not os.path.isdir(leveling_dir):
+        return f"leveling_guides exists but is not a directory: {leveling_dir}"
+    
     # Load all .md files, but prioritize ones matching the target level
-    md_files = glob.glob(os.path.join(leveling_dir, "*.md"))
+    try:
+        md_files = glob.glob(os.path.join(leveling_dir, "*.md"))
+    except Exception as e:
+        return f"Error reading leveling guides directory: {str(e)}"
     
     # Sort files - prioritize files that match the target level pattern
     filename_lower = [os.path.basename(f).lower() for f in md_files]

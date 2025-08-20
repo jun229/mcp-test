@@ -142,7 +142,7 @@ def load_leveling_context(target_level: str = "uni3") -> str:
     return context
 
 @mcp.tool()
-async def search_and_generate(title: str, department: str, requirements: List[str] = None) -> str:
+async def generate_jd(title: str, department: str, requirements: List[str] = None) -> str:
     """Search for similar job descriptions and generate a new one using Vercel backend.
     
     Args:

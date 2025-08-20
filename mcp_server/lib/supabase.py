@@ -52,9 +52,6 @@ def search_similar_faq_docs(query_embedding, match_count=5):
         return result.data
 
 
-def search_similar_chunks(query_embedding, match_count=5):
-    """Legacy function - defaults to job descriptions for backward compatibility"""
-    return search_similar_job_descriptions(query_embedding, match_count)
 
 
  

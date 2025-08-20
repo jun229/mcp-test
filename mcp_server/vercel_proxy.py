@@ -8,9 +8,9 @@ import requests
 import os
 import glob
 from mcp.server.fastmcp import FastMCP
-from typing import List
+from typing import List, Tuple
 
-def get_config():
+def get_config() -> Tuple[str, str]:
     """Get configuration from environment, config file, or fallback to defaults"""
     # Try environment variables first
     vercel_url = os.environ.get('VERCEL_API_URL')
@@ -29,8 +29,8 @@ def get_config():
                 pass
     
     # Fallback to defaults (for development only)
-    vercel_url = vercel_url or "https://mcp-test-b41tq9soe-brians-projects-76cf6a1c.vercel.app"
-    api_key = api_key or "123123"
+    vercel_url = vercel_url or "https://your-deployment.vercel.app"
+    api_key = api_key or "dev-api-key"
     
     return vercel_url, api_key
 
@@ -74,7 +74,7 @@ def load_leveling_context(target_level: str = "uni3") -> str:
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 filename = os.path.basename(file_path)
-                content = f.read()[:3000]  # Truncate each file to 3000 chars
+                content = f.read() # loads the entirety of all files
                 context += f"\n--- {filename} ---\n{content}\n"
         except Exception as e:
             context += f"\n--- Error loading {file_path}: {str(e)} ---\n"
@@ -93,12 +93,19 @@ async def search_and_generate(title: str, department: str, requirements: List[st
         department: Department name (required) 
         requirements: Specific requirements (optional - leave empty to infer from examples)
     """
+
+    # Validate inputs
+    if not title or not title.strip():
+        return "Error: Job title is required"
     
+    if not department or not department.strip():
+        return "Error: Department is required"
+    
+    if requirements is None:
+        requirements = []
+        
+    # API call to Vercel
     try:
-        # Handle None requirements (convert to empty list)
-        if requirements is None:
-            requirements = []
-            
         # Forward request to Vercel REST API endpoint
         response = requests.post(
             f"{VERCEL_API_URL}/api/search-and-generate",

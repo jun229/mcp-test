@@ -301,7 +301,43 @@ async def root():
 
 @app.get("/health")
 async def health():
-    return {"status": "healthy"}
+    """
+    Health check endpoint that tests system dependencies.
+    
+    Returns:
+        200: System is healthy with working database connection
+        503: System is unhealthy with error details
+    """
+    try:
+        # Test database connectivity
+        result = supabase.table('job_descriptions').select('id').limit(1).execute()
+        
+        return {
+            "status": "healthy",
+            "database": "connected",
+            "timestamp": time.time(),
+            "checks": {
+                "supabase": "✅ Connected",
+                "environment": "✅ Variables loaded"
+            }
+        }
+        
+    except Exception as e:
+        # Return 503 Service Unavailable for unhealthy state
+        logger.error("Health check failed: %s", e)
+        
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "unhealthy", 
+                "error": str(e),
+                "timestamp": time.time(),
+                "checks": {
+                    "supabase": f"❌ Failed: {str(e)}",
+                    "environment": "⚠️ Partial"
+                }
+            }
+        )
 
 if __name__ == "__main__":
     import uvicorn

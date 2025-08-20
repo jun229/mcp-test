@@ -93,12 +93,48 @@ def load_leveling_context(target_level: str = "uni3") -> str:
     
     for file_path in files_to_load:
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            # Security: Ensure file is within leveling_guides directory
+            real_file_path = os.path.realpath(file_path)
+            real_leveling_dir = os.path.realpath(leveling_dir)
+            
+            if not real_file_path.startswith(real_leveling_dir):
+                context += f"\n--- Security error: {file_path} outside leveling_guides directory ---\n"
+                continue
+            
+            # Check file size to prevent memory issues
+            file_size = os.path.getsize(file_path)
+            if file_size > 1024 * 1024:  # 1MB limit
+                context += f"\n--- Warning: {os.path.basename(file_path)} too large ({file_size} bytes), skipping ---\n"
+                continue
+            
+            if file_size == 0:
+                context += f"\n--- Warning: {os.path.basename(file_path)} is empty, skipping ---\n"
+                continue
+            
+            # Read file with proper error handling
+            with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
                 filename = os.path.basename(file_path)
-                content = f.read() # loads the entirety of all files
+                content = f.read()
+                
+                # Sanitize content - remove or replace problematic characters
+                if not content.strip():
+                    context += f"\n--- Warning: {filename} contains no readable content ---\n"
+                    continue
+                
+                # Limit content length to prevent context overflow
+                if len(content) > 50000:  # 50k character limit per file
+                    content = content[:50000] + "\n... [TRUNCATED - file too long]"
+                
                 context += f"\n--- {filename} ---\n{content}\n"
+                
+        except PermissionError:
+            context += f"\n--- Permission denied reading {os.path.basename(file_path)} ---\n"
+        except UnicodeDecodeError:
+            context += f"\n--- Encoding error reading {os.path.basename(file_path)} (not valid UTF-8) ---\n"
+        except FileNotFoundError:
+            context += f"\n--- File not found: {os.path.basename(file_path)} ---\n"
         except Exception as e:
-            context += f"\n--- Error loading {file_path}: {str(e)} ---\n"
+            context += f"\n--- Error loading {os.path.basename(file_path)}: {str(e)} ---\n"
     
     if not context:
         return "No readable markdown files found in leveling_guides directory."

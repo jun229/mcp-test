@@ -20,13 +20,60 @@ except Exception as e:
 
 def search_similar_job_descriptions(query_embedding: List[float], match_count: int = 5) -> List[Dict[str, Any]]:
     """Search for similar job descriptions using vector similarity"""
+    
+    # Input validation
+    if not isinstance(query_embedding, list):
+        raise TypeError(f"query_embedding must be a list, got {type(query_embedding)}")
+    
+    if len(query_embedding) != 1536:
+        raise ValueError(f"query_embedding must have 1536 dimensions, got {len(query_embedding)}")
+    
+    if not all(isinstance(x, (int, float)) for x in query_embedding):
+        raise ValueError("query_embedding must contain only numbers")
+    
+    if not isinstance(match_count, int):
+        raise TypeError(f"match_count must be an integer, got {type(match_count)}")
+    
+    if match_count < 1 or match_count > 100:
+        raise ValueError(f"match_count must be between 1 and 100, got {match_count}")
+    
     try:
         # Try to use vector similarity search on job_descriptions table
         result = supabase.rpc('match_jobs', {
             'query_embedding': query_embedding,
             'match_count': match_count
         }).execute()
-        return result.data if result.data else []
+        
+        # Validate result structure
+        if not hasattr(result, 'data'):
+            logger.error("Supabase result missing 'data' attribute")
+            return []
+        
+        if result.data is None:
+            logger.info("No matching job descriptions found")
+            return []
+        
+        if not isinstance(result.data, list):
+            logger.error("Supabase returned non-list data: %s", type(result.data))
+            return []
+        
+        # Validate each result item
+        validated_results = []
+        for item in result.data:
+            if not isinstance(item, dict):
+                logger.warning("Skipping non-dict result item: %s", type(item))
+                continue
+            
+            # Ensure required fields exist
+            if 'id' not in item or 'content' not in item:
+                logger.warning("Skipping result item missing required fields")
+                continue
+                
+            validated_results.append(item)
+        
+        logger.info("Found %d valid job description matches", len(validated_results))
+        return validated_results
+        
     except Exception as e:
         logger.warning("Vector similarity search failed: %s", e)
         logger.info("Falling back to empty results")

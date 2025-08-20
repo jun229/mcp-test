@@ -11,3 +11,4 @@ weather/
 interactive_jd_demo.py
 test_rag.py
 test_rag2.py
+vercel_proxy.py

@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Import lib modules
-from lib.supabase import supabase, search_similar_chunks
+from lib.supabase import supabase, search_similar_job_descriptions
 from lib.embeddings import embed
 
 app = FastAPI(title="JD Generator API", version="1.0.0")
@@ -66,7 +66,7 @@ async def search_and_generate_tool(title: str, department: str, requirements: Li
         query_embedding = embed(search_text)
 
         # Return top 5 similar chunks from the chunks table
-        similar_chunks = search_similar_chunks(query_embedding, match_count=5)
+        similar_chunks = search_similar_job_descriptions(query_embedding, match_count=5)
         
             
         # Build context and return concise prompt

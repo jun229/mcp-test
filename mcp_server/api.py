@@ -48,7 +48,7 @@ def format_similar_jobs_for_context(similar_chunks: List[dict]) -> str:
     
     context = ""
     for i, chunk in enumerate(similar_chunks, 1):
-        content = chunk.get('content', '')[:800]
+        content = chunk.get('content', '')
         metadata = chunk.get('metadata', {})
         job_title = metadata.get('job_title', f'Similar Job {i}')
         context += f"\n--- Example {i}: {job_title} ---\n{content}\n"
@@ -104,8 +104,16 @@ Rules:
 """
         return prompt
         
+    except EnvironmentError as e:
+        return f"Configuration error: {str(e)}"
+    except ConnectionError as e:
+        return f"Database connection error: {str(e)}"
+    except TimeoutError as e:
+        return f"Request timeout: {str(e)}"
+    except ValueError as e:
+        return f"Invalid data: {str(e)}"
     except Exception as e:
-        return f"Error generating job description: {str(e)}"
+        return f"Unexpected error: {str(e)}"
 
 # MCP Protocol Handler
 @app.post("/mcp")

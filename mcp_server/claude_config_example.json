@@ -1,0 +1,21 @@
+{
+    "mcpServers": {
+      "JD_Tools": {
+        "command": "/Users/USERNAME/.local/bin/uv",
+        "args": [
+          "run",
+          "--with", "mcp[cli]",
+          "--with", "requests",
+          "--with", "fastmcp",
+          "mcp",
+          "run",
+          "/Users/USERNAME/Desktop/Coding/mcp-test/mcp_server/vercel_proxy.py"
+        ],
+        "env": {
+          "VERCEL_API_URL": "https://PUT-YOUR-VERCEL-APP-URL-HERE.vercel.app",
+          "MCP_API_KEY": "PUT-YOUR-MCP-API-KEY-HERE"
+        }
+      }
+    }
+  }
+  

@@ -15,6 +15,8 @@ The Job Description Generator is a **robust, production-ready** AI-powered syste
 - 🔒 **Security Hardened**: Input sanitization, directory traversal protection, resource limits
 
 ### Architecture
+
+**Data Flow:**
 ```
 Claude Desktop → MCP Protocol → Local Proxy → Vercel API → Vector DB (Supabase)
                                                     ↓
@@ -52,14 +54,15 @@ mcp_server/
 - **File Security**: Directory traversal protection, size limits, encoding safety
 - **Leveling Intelligence**: Prioritizes exact matches → similar levels → general guides
 
-**MCP Tools Exposed**:
+**MCP Tools Exposed:**
+
 ```python
 @mcp.tool()
-async def search_and_generate(title: str, department: str, requirements: List[str] = None) -> str
+async def search_and_generate(title: str, department: str, requirements: List[str] = None) -> str:
     # Generates job descriptions with RAG-based context
 
 @mcp.tool() 
-async def leveling_guide(job_description: str, target_level: str = "uni3") -> str
+async def leveling_guide(job_description: str, target_level: str = "uni3") -> str:
     # Adjusts job descriptions to specific experience levels
 ```
 
@@ -136,10 +139,14 @@ except ConnectionError as e:
 ### `lib/supabase.py` - Vector Database
 **Purpose**: Interface to Supabase vector database with comprehensive error recovery.
 
-**Key Functions**:
+**Key Functions:**
+
 ```python
-def search_similar_job_descriptions(query_embedding: List[float], match_count: int = 5) -> List[Dict[str, Any]]
-def search_similar_faq_docs(query_embedding: List[float], match_count: int = 5) -> List[Dict[str, Any]]
+def search_similar_job_descriptions(query_embedding: List[float], match_count: int = 5) -> List[Dict[str, Any]]:
+    # Search for similar job descriptions in vector database
+
+def search_similar_faq_docs(query_embedding: List[float], match_count: int = 5) -> List[Dict[str, Any]]:
+    # Search for similar FAQ documents in vector database
 ```
 
 **Robustness Features**:
@@ -202,7 +209,8 @@ def search_similar_faq_docs(query_embedding: List[float], match_count: int = 5) 
 
 4. **Configure environment** (choose one method):
 
-   **Method 1: Environment Variables** (Recommended)
+   **Method 1: Environment Variables (Recommended)**
+   
    ```bash
    export VERCEL_API_URL="your-vercel-deployment-url"
    export MCP_API_KEY="your-api-key"  
@@ -212,6 +220,7 @@ def search_similar_faq_docs(query_embedding: List[float], match_count: int = 5) 
    ```
 
    **Method 2: Claude Desktop Configuration**
+   
    ```json
    {
      "mcpServers": {
@@ -228,7 +237,8 @@ def search_similar_faq_docs(query_embedding: List[float], match_count: int = 5) 
    }
    ```
 
-   **Method 3: Local Config File** (Development Only)
+   **Method 3: Local Config File (Development Only)**
+   
    ```bash
    cp config.json.example config.json
    # Edit config.json with your values (ensure it's in .gitignore!)
@@ -275,26 +285,30 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (Mac) o
 ## 🚀 Usage Examples
 
 ### Basic Job Description Generation
-```
-# In Claude Desktop (after MCP setup)
-User: "Generate a job description for a Senior Frontend Engineer in the Engineering team requiring React and TypeScript"
 
-# System workflow:
-# 1. Validates inputs (title: "Senior Frontend Engineer", department: "Engineering")
-# 2. Creates search embedding from "Senior Frontend Engineer Engineering React TypeScript"
-# 3. Searches vector database for similar job descriptions (top 5)
-# 4. Returns context-rich prompt with examples for Claude to generate new job description
+**Example Usage:**
 ```
+In Claude Desktop (after MCP setup):
+User: "Generate a job description for a Senior Frontend Engineer in the Engineering team requiring React and TypeScript"
+```
+
+**System workflow:**
+1. Validates inputs (title: "Senior Frontend Engineer", department: "Engineering")
+2. Creates search embedding from "Senior Frontend Engineer Engineering React TypeScript"
+3. Searches vector database for similar job descriptions (top 5)
+4. Returns context-rich prompt with examples for Claude to generate new job description
 
 ### Experience Level Adjustment
+
+**Example Usage:**
 ```
 User: "Rewrite this job description to match a uni5 level"
-
-# System workflow:
-# 1. Validates target_level format (uni5 is valid: uni1-7, m3-7)
-# 2. Loads relevant leveling guides (uni5.md, other uni files, UNICode.md, general)
-# 3. Returns comprehensive prompt with leveling context and formatting requirements
 ```
+
+**System workflow:**
+1. Validates target_level format (uni5 is valid: uni1-7, m3-7)
+2. Loads relevant leveling guides (uni5.md, other uni files, UNICode.md, general)
+3. Returns comprehensive prompt with leveling context and formatting requirements
 
 ### Health Monitoring
 ```bash

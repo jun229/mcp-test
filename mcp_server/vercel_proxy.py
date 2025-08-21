@@ -50,7 +50,7 @@ def load_prompt(prompt_name: str) -> str:
         return f"Error loading prompt '{prompt_name}.md': {str(e)}"
 
 def load_leveling_context(target_level: str = "uni3") -> str:
-    """Load all leveling guide files as context"""
+    """Load 4 most relevant leveling guide files for the target level"""
     
     leveling_dir = os.path.join(os.path.dirname(__file__), "leveling_guides")
     
@@ -60,7 +60,29 @@ def load_leveling_context(target_level: str = "uni3") -> str:
     context = ""
     try:
         md_files = glob.glob(os.path.join(leveling_dir, "*.md"))
-        for file_path in sorted(md_files):  # Sort for consistent order
+        
+        # Prioritize files: exact match → similar level → UNICode → others
+        target_lower = target_level.lower()
+        
+        # 1. Exact match (e.g., "uni3.md" for target "uni3")
+        exact_files = [f for f in md_files if target_lower in os.path.basename(f).lower()]
+        
+        # 2. Similar level type (other "uni" files for "uni3", or "m" files for "m5")  
+        level_type = "uni" if target_lower.startswith("uni") else "m" if target_lower.startswith("m") else ""
+        similar_files = [f for f in md_files if level_type and level_type in os.path.basename(f).lower() and f not in exact_files and "unicode" not in os.path.basename(f).lower()]
+        
+        # 3. Always include UNICode.md if it exists
+        unicode_file = os.path.join(leveling_dir, "UNICode.md")
+        unicode_files = [unicode_file] if os.path.exists(unicode_file) and unicode_file not in exact_files else []
+        
+        # 4. Other general files
+        other_files = [f for f in md_files if f not in exact_files and f not in similar_files and f not in unicode_files]
+        
+        # Select top 4 files in priority order
+        selected_files = (exact_files + similar_files + unicode_files + other_files)[:4]
+        
+        # Load selected files
+        for file_path in selected_files:
             try:
                 with open(file_path, 'r', encoding='utf-8') as f:
                     filename = os.path.basename(file_path)
@@ -69,6 +91,7 @@ def load_leveling_context(target_level: str = "uni3") -> str:
                         context += f"\n--- {filename} ---\n{content}\n"
             except Exception:
                 continue  # Skip files that can't be read
+                
     except Exception:
         return "Error loading leveling guides."
     

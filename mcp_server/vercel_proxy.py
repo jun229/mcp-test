@@ -38,108 +38,41 @@ VERCEL_API_URL, API_KEY = get_config()
 
 mcp = FastMCP("jd-generator-vercel")
 
+def load_prompt(prompt_name: str) -> str:
+    """Load prompt template from subagents folder"""
+    prompt_path = os.path.join(os.path.dirname(__file__), "subagents", f"{prompt_name}.md")
+    try:
+        with open(prompt_path, 'r', encoding='utf-8') as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        return f"Error: Prompt file '{prompt_name}.md' not found"
+    except Exception as e:
+        return f"Error loading prompt '{prompt_name}.md': {str(e)}"
+
 def load_leveling_context(target_level: str = "uni3") -> str:
-    """Load relevant leveling guide context based on target level (uni1-7, m3-7)"""
+    """Load all leveling guide files as context"""
     
-    # Input validation
-    if not isinstance(target_level, str):
-        raise TypeError(f"target_level must be a string, got {type(target_level)}")
-    
-    if not target_level or not target_level.strip():
-        raise ValueError("target_level cannot be empty")
-    
-    target_level = target_level.strip().lower()
-    
-    # Validate target level format
-    valid_levels = [f"uni{i}" for i in range(1, 8)] + [f"m{i}" for i in range(3, 8)]
-    if target_level not in valid_levels:
-        raise ValueError(f"Invalid target_level '{target_level}'. Must be one of: {', '.join(valid_levels)}")
-    
-    context = ""
     leveling_dir = os.path.join(os.path.dirname(__file__), "leveling_guides")
     
     if not os.path.exists(leveling_dir):
-        return "No leveling guides found. Please create a 'leveling_guides' directory with reference text files."
+        return "No leveling guides found."
     
-    if not os.path.isdir(leveling_dir):
-        return f"leveling_guides exists but is not a directory: {leveling_dir}"
-    
-    # Load all .md files, but prioritize ones matching the target level
+    context = ""
     try:
         md_files = glob.glob(os.path.join(leveling_dir, "*.md"))
-    except Exception as e:
-        return f"Error reading leveling guides directory: {str(e)}"
+        for file_path in sorted(md_files):  # Sort for consistent order
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    filename = os.path.basename(file_path)
+                    content = f.read().strip()
+                    if content:
+                        context += f"\n--- {filename} ---\n{content}\n"
+            except Exception:
+                continue  # Skip files that can't be read
+    except Exception:
+        return "Error loading leveling guides."
     
-    # Sort files - prioritize files that match the target level pattern
-    filename_lower = [os.path.basename(f).lower() for f in md_files]
-    
-    # Exact match first (e.g., "uni3.md" for target "uni3")
-    exact_files = [f for f in md_files if target_level.lower() in os.path.basename(f).lower()]
-    
-    # Then similar levels (e.g., other "uni" files for "uni3", or "m" files for "m5")
-    level_type = "uni" if target_level.startswith("uni") else "m" if target_level.startswith("m") else ""
-    similar_files = [f for f in md_files if level_type and level_type in os.path.basename(f).lower() and f not in exact_files]
-    
-    # Finally, general files
-    other_files = [f for f in md_files if f not in exact_files and f not in similar_files]
-    
-    # Always include UNICode if it exists
-    unicode_file = os.path.join(leveling_dir, "UNICode.md")
-    if os.path.exists(unicode_file) and unicode_file not in (exact_files + similar_files + other_files):
-        other_files.insert(0, unicode_file)  # Add at beginning of other_files
-    
-    # Load files in priority order: exact match → similar level → general (including UNICode)
-    files_to_load = (exact_files + similar_files + other_files)[:5]  # Limit to 5 most relevant files
-    
-    for file_path in files_to_load:
-        try:
-            # Security: Ensure file is within leveling_guides directory
-            real_file_path = os.path.realpath(file_path)
-            real_leveling_dir = os.path.realpath(leveling_dir)
-            
-            if not real_file_path.startswith(real_leveling_dir):
-                context += f"\n--- Security error: {file_path} outside leveling_guides directory ---\n"
-                continue
-            
-            # Check file size to prevent memory issues
-            file_size = os.path.getsize(file_path)
-            if file_size > 1024 * 1024:  # 1MB limit
-                context += f"\n--- Warning: {os.path.basename(file_path)} too large ({file_size} bytes), skipping ---\n"
-                continue
-            
-            if file_size == 0:
-                context += f"\n--- Warning: {os.path.basename(file_path)} is empty, skipping ---\n"
-                continue
-            
-            # Read file with proper error handling
-            with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
-                filename = os.path.basename(file_path)
-                content = f.read()
-                
-                # Sanitize content - remove or replace problematic characters
-                if not content.strip():
-                    context += f"\n--- Warning: {filename} contains no readable content ---\n"
-                    continue
-                
-                # Limit content length to prevent context overflow
-                if len(content) > 50000:  # 50k character limit per file
-                    content = content[:50000] + "\n... [TRUNCATED - file too long]"
-                
-                context += f"\n--- {filename} ---\n{content}\n"
-                
-        except PermissionError:
-            context += f"\n--- Permission denied reading {os.path.basename(file_path)} ---\n"
-        except UnicodeDecodeError:
-            context += f"\n--- Encoding error reading {os.path.basename(file_path)} (not valid UTF-8) ---\n"
-        except FileNotFoundError:
-            context += f"\n--- File not found: {os.path.basename(file_path)} ---\n"
-        except Exception as e:
-            context += f"\n--- Error loading {os.path.basename(file_path)}: {str(e)} ---\n"
-    
-    if not context:
-        return "No readable markdown files found in leveling_guides directory."
-    
-    return context
+    return context if context else "No readable leveling guides found."
 
 @mcp.tool()
 async def generate_jd(title: str, department: str, requirements: List[str] = None) -> str:
@@ -191,42 +124,32 @@ async def generate_jd(title: str, department: str, requirements: List[str] = Non
 async def leveling_guide(job_description: str, target_level: str = "uni3") -> str:
     """Rewrite a job description to match a specific level (uni1-7, m3-7) using context from reference files"""
     
-    # Context from reference leveling guides
+    # Load prompt template and leveling context
+    prompt_template = load_prompt("leveling_guide")
     leveling_context = load_leveling_context(target_level)
     
-    prompt = f"""You are a job description leveling expert. Use the LEVELING GUIDES below as reference:
+    # Format the prompt with variables
+    return prompt_template.format(
+        leveling_context=leveling_context,
+        job_description=job_description,
+        target_level=target_level
+    )
 
-{leveling_context}
-
-CURRENT JOB DESCRIPTION:
-{job_description}
-
-TARGET LEVEL: {target_level}
-
-Your task:
-- Rewrite the job description to match the {target_level} level
-- Adjust responsibilities, requirements, and expectations accordingly
-- Use the leveling guides as reference for appropriate language and expectations
-- Keep the same role essence but adjust complexity, autonomy, and impact level
-- Output in the same markdown format as the input
-
-FORMATTING REQUIREMENTS:
-- Keep each section concise: 3-4 bullet points maximum unless specified otherwise
-- Use direct, impact-focused language that emphasizes ownership and results
-- Always end "Nice to Have" section with "Love for unicorns :)" as the final bullet
-- Write in human terms that anyone can understand - avoid jargon and complexity
-- Emphasize people-first thinking, collaborative problem-solving, and building for the long-term
-- Include language about pushing through ambiguity, iterating fast, and creating clarity from complexity
-
-Focus on:
-- Years of experience requirements aligned with level
-- Level of autonomy and decision-making authority
-- Scope of impact and cross-functional responsibility  
-- Technical depth vs breadth expectations
-- Leadership/mentoring requirements for the level
-"""
+@mcp.tool()
+async def create_rubric(job_description: str, target_level: str = "uni3") -> str:
+    """Create comprehensive interview rubric from job description and target level"""
     
-    return prompt
+    # Load prompt template and leveling context
+    prompt_template = load_prompt("rubric_creator")
+    leveling_context = load_leveling_context(target_level)
+    
+    # Format the prompt with variables
+    return prompt_template.format(
+        target_level=target_level.upper(),
+        target_level_lower=target_level,
+        leveling_context=leveling_context,
+        job_description=job_description
+    )
 
 if __name__ == "__main__":
     mcp.run(transport='stdio') 

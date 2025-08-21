@@ -47,15 +47,16 @@ async def log_requests(request: Request, call_next):
     # Step 4: Calculate how long the request took
     duration = time.time() - start_time
     
-    # Step 5: Log the completed request
-    logger.info(
-        "%s %s - %d - %.3fs - %s", 
-        method,           # GET, POST, etc.
-        path,            # /api/search-and-generate, /health, etc.
-        response.status_code,  # 200, 404, 500, etc.
-        duration,        # 1.234 seconds
-        client_ip        # Who made the request
-    )
+    # Step 5: Log the completed request (skip favicon requests to reduce noise)
+    if not path.endswith(('.ico', '.png')) or not any(icon in path for icon in ['favicon', 'apple-touch-icon']):
+        logger.info(
+            "%s %s - %d - %.3fs - %s", 
+            method,           # GET, POST, etc.
+            path,            # /api/search-and-generate, /health, etc.
+            response.status_code,  # 200, 404, 500, etc.
+            duration,        # 1.234 seconds
+            client_ip        # Who made the request
+        )
     
     # Step 6: Return the response to the client
     return response
@@ -298,6 +299,13 @@ async def api_search_and_generate(
 @app.get("/")
 async def root():
     return {"status": "ok", "message": "JD Generator API is running"}
+
+@app.get("/favicon.ico")
+@app.get("/favicon.png")
+async def favicon():
+    """Return empty response for favicon requests to prevent 404s"""
+    from fastapi.responses import Response
+    return Response(content="", media_type="image/x-icon")
 
 @app.get("/health")
 async def health():

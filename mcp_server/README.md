@@ -2,9 +2,9 @@
 
 A lightweight MCP (Model Context Protocol) server that helps generate and level job descriptions. This tool can search for similar job postings and generate new ones, plus rewrite job descriptions to match specific experience levels.
 
-## 🚀 Quick Start (Recommended)
+## Quick Start
 
-### Option 1: Direct Claude Desktop Integration
+### Step 1: Direct Claude Desktop Integration
 
 Add this to your Claude Desktop configuration (`~/Library/Application Support/Claude/claude_desktop_config.json`):
 
@@ -32,7 +32,7 @@ Add this to your Claude Desktop configuration (`~/Library/Application Support/Cl
 - `YOUR_USERNAME` with your actual username
 - `/path/to/your/mcp-test/` with the actual path to this repository
 
-### Option 2: Local Development Setup
+### Step 2: Local Development Setup
 
 If you want to run and modify the server locally:
 
